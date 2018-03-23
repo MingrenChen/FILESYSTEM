@@ -1,7 +1,7 @@
 //
 // Created by LiAllen on 2018-03-19.
 //
-
+#include <string.h>
 #include "ext2_utils.h"
 
 
@@ -72,7 +72,7 @@ int find_free_block(){
  * idx indicates bit index in bitmap. if mode is 0, turn idx on, o.w. off.
  */
 void set_bitmap(int bm_idx ,int idx, int mode){
-    int num_bit;
+    int num_bit;<string.h>
     if (!bm_idx){
         num_bit = sb->s_blocks_count;
     } else{
@@ -99,8 +99,42 @@ int find_dir_by_name(char *name[]){
   return 0;
 }
 
+
+size_t count(const char* s, char c) {
+    size_t r = 0;
+    for(; *s; s++)
+        r += *s == c;
+    return r;
+}
+
+char* tokenize(char *abspath){
+  abspath += 1;
+  int count = 0;
+  size_t i = 0;
+  for (i = 0; i < strlen(abspath); i++) {
+    if (abspath[i] == '/') {
+      count ++;
+    }
+    if (count == 1) {
+      break;
+    }
+  }
+  char* parent = malloc(sizeof(char*));size_t count(const char* s, char c) {
+    size_t r = 0;
+    for(; *s; s++)
+        r += *s == c;
+    return r;
+}
+  strncpy(parent, abspath, i);
+  return parent;
+}
+
 /* This function can find if a dir is in */
 int find_dir_in_dir(char *name, int inode_num){
-    struct ext2_inode *c_inode = (struct ext2_inode *)((disk + EXT2_BLOCK_SIZE * gdt->bg_inode_table));
-    printf("%d\n", c_inode->i_block[0]);
+    // struct ext2_inode *c_inode = (struct ext2_inode *)((disk + EXT2_BLOCK_SIZE * gdt->bg_inode_table));
+    // this is the
+    if (count(name, '/') == 2){
+
+    }
+    return 0;
 }

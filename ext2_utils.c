@@ -72,7 +72,7 @@ int find_free_block(){
  * idx indicates bit index in bitmap. if mode is 0, turn idx on, o.w. off.
  */
 void set_bitmap(int bm_idx ,int idx, int mode){
-    int num_bit;<string.h>
+    int num_bit;
     if (!bm_idx){
         num_bit = sb->s_blocks_count;
     } else{
@@ -107,6 +107,9 @@ size_t count(const char* s, char c) {
     return r;
 }
 
+// this function split the outer directory from a std abspath.
+// for example /root/b/folder2/untitled/ should return root.
+// to get the remaining, use origin = origin + strlen(result) + 1
 char* tokenize(char *abspath){
   abspath += 1;
   int count = 0;
@@ -119,22 +122,102 @@ char* tokenize(char *abspath){
       break;
     }
   }
-  char* parent = malloc(sizeof(char*));size_t count(const char* s, char c) {
-    size_t r = 0;
-    for(; *s; s++)
-        r += *s == c;
-    return r;
-}
+  char* parent = malloc(sizeof(char*));
   strncpy(parent, abspath, i);
   return parent;
 }
 
+
+char* standardize(char *name){
+  char* new_name = malloc(sizeof(char*));
+  int flag = 0;
+  int i;
+  for (i = 0; i < strlen(name); i++) {
+    if (name[i] != '/') {
+      if (flag == 1) {
+        flag = 0;
+      }
+      strncat(new_name, &name[i], 1);
+    } else if (flag == 0){
+      flag = 1;
+      strncat(new_name, &name[i], 1);
+    }
+  }
+  if (new_name[i-1] != '/') {
+    strncat(new_name, "/", 1);
+  }
+  return new_name;
+}
+
+// find a file in a directory.
+char* findFileName(char *name){
+  char *fileName = malloc(sizeof(char*));
+  int k = 1 + strlen(name) - strlen(strchr(name + 1, '/'));
+  strncpy(fileName, name+k, strlen(name)-k-1);
+  return fileName;
+}
+
+// get the name of file of a dir entry.
+char *getName(struct ext2_dir_entry* entry){
+  char *name = malloc(sizeof(char*));
+  strncpy(name, entry->name, entry->name_len);
+  return name;
+}
+
 /* This function can find if a dir is in */
 int find_dir_in_dir(char *name, int inode_num){
-    // struct ext2_inode *c_inode = (struct ext2_inode *)((disk + EXT2_BLOCK_SIZE * gdt->bg_inode_table));
-    // this is the
-    if (count(name, '/') == 2){
-
+    char *dirName = tokenize(name);
+    name = name + strlen(dirName) + 1;
+    unsigned int endAddress = 0;
+    // file's parent directory
+    if (count(name, '/') == 3){
+      struct ext2_dir_entry * current = (struct ext2_dir_entry *)\
+      (disk + inode_table[inode_num].i_block[0] * EXT2_BLOCK_SIZE);
+      endAddress = endAddress + current->rec_len;
+      while (endAddress != 1024){
+        char *entry_name = getName(current);
+        if (strcmp(entry_name, dirName) == 0 && current->file_type == EXT2_FT_DIR) {
+          free(dirName);
+          free(entry_name);
+          return current->inode;
+        }
+        free(entry_name);
+      }
+    } else { // not the parent directory
+      struct ext2_dir_entry * current = (struct ext2_dir_entry *)\
+      (disk + inode_table[inode_num].i_block[0] * EXT2_BLOCK_SIZE);
+      endAddress += current->rec_len;
+      while (endAddress != 1024){
+        char *entry_name = getName(current);
+        if (strcmp(entry_name, dirName) == 0 &&
+         current->file_type == EXT2_FT_DIR) {
+          free(dirName);
+          free(entry_name);
+          return find_dir_in_dir(name, current->inode);
+        }
+        free(entry_name);
+      }
     }
-    return 0;
+    free(dirName);
+    return -1;
+}
+
+int find_file_in_dir(char *name, int inode_num){
+  char *fileName = findFileName(name);
+  struct ext2_dir_entry * current = (struct ext2_dir_entry *)\
+  (disk + inode_table[inode_num].i_block[0] * EXT2_BLOCK_SIZE);
+  unsigned int endAddress = 0;
+  while (endAddress != 1024){
+    endAddress += current->rec_len;
+    char *entry_name = getName(current);
+    if (strcmp(entry_name, fileName) == 0 &&
+     current->file_type == EXT2_FT_REG_FILE) {
+       free(fileName);
+      return current->inode;
+    }
+    current = (struct ext2_dir_entry *)\
+    (disk + inode_table[inode_num].i_block[0] * EXT2_BLOCK_SIZE + endAddress);
+  }
+  free(fileName);
+  return -1;
 }

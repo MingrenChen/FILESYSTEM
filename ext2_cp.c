@@ -27,8 +27,6 @@ int main(int argc, char **argv) {
 
     init_ptrs(argv[1]);
 
-    inode_table;
-
     // check if disk has enough space.
     if (sb->s_free_blocks_count == 0 || sb->s_free_inodes_count == 0){
         perror("no enough space");
@@ -46,6 +44,11 @@ int main(int argc, char **argv) {
     fseek(src, 0, SEEK_SET);
 
     // find root dir
+    char *name = argv[3];
+    int dir_inode_num = find_dir_in_dir(name, EXT2_ROOT_INO);
+    // if ((int dir_inode_num = find_dir_in_dir(name, EXT2_ROOT_INO)) > 0) {
+    //   /* code */
+    // }
 
 
 

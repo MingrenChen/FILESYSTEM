@@ -75,6 +75,17 @@ int main(int argc, char **argv) {
 
     printf("Inodes:\n");
     struct ext2_inode *inode = (struct ext2_inode *)((disk + EXT2_BLOCK_SIZE * gdt->bg_inode_table));
+    // struct ext2_dir_entry * current = (struct ext2_dir_entry *)(disk + inode[1].i_block[0] * EXT2_BLOCK_SIZE);
+    // unsigned int endAddress = 0;
+    // while (endAddress != 1024) {
+    //   printf("%s\n", current->name);
+    //   endAddress += current->rec_len;
+    //   if (current->file_type == 1) {
+    //     printf("%d\n", current->name_len);
+    //     printf("%d\n", strlen(current->name));
+    //   }
+    //   current = (struct ext2_dir_entry *)(disk + inode[1].i_block[0] * EXT2_BLOCK_SIZE+endAddress);
+    // }
 
     for (int i = EXT2_ROOT_INO - 1; i < sb->s_inodes_count; i++) {
         if (i == EXT2_ROOT_INO - 1 || i >= EXT2_GOOD_OLD_FIRST_INO) {
@@ -93,12 +104,20 @@ int main(int argc, char **argv) {
                     printf("[%d] type: d size: %d links: %d blocks: %d\n", i + 1, inode[i].i_size,
                            inode[i].i_links_count, inode[i].i_blocks);
                     printf("[%d] Blocks: ", i + 1);
+                    struct ext2_dir_entry * current = (struct ext2_dir_entry *)(disk + inode[i].i_block[0] * EXT2_BLOCK_SIZE);
+                    unsigned int endAddress = 0;
+                    while (endAddress != 1024) {
+                      printf("%s\n", current->name);
+                      endAddress += current->rec_len;
+                      if (current->file_type == 1) {
+                        printf("%d\n", current->name_len);
+                      }
+                      current = (struct ext2_dir_entry *)(disk + inode[i].i_block[0] * EXT2_BLOCK_SIZE+endAddress);
+                    }
+
                     for (int j = 0; j < (inode[i].i_blocks / 2); j++) {
                         int index = inode[i].i_block[0];
                         printf("%d\n", index);
-                        struct ext2_dir_entry *bb = (struct ext2_dir_entry*)(disk + 1024 * index);
-                        printf("%s\n", bb->name);
-
                     }
                 }
             }

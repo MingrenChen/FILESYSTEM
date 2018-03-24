@@ -32,4 +32,6 @@ int find_free_block();
 
 void set_bitmap(int bm_idx ,int idx, int mode);
 
+int find_dir_in_dir(char *name, int inode_num);
+
 #endif //A4_EXT2_UTILS_H

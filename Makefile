@@ -6,6 +6,9 @@ fs : ext2_cp.o ext2_utils.o
 cp : ext2_cp.o ext2_utils.o
 	gcc $(CFlag) -o cp $^
 
+mkdir : ext2_mkdir.o ext2_utils.o
+	gcc $(CFlag) -o mkdir $^
+
 %.o : %.c ext2_utils.h ext2.h
 	gcc $(CFlag) -c $<
 

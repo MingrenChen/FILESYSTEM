@@ -151,10 +151,17 @@ char* standardize(char *name){
 
 // find a file in a directory.
 char* findFileName(char *name){
-  char *fileName = malloc(sizeof(char*));
-  int k = 1 + strlen(name) - strlen(strchr(name + 1, '/'));
-  strncpy(fileName, name+k, strlen(name)-k-1);
-  return fileName;
+    char *fileName = malloc(sizeof(char*));
+    int slashNum = count(name, '/');
+    int index = 0;
+    while (slashNum > 1) {
+      if (name[index] == '/') {
+        slashNum --;
+      }
+      index ++;
+    }
+    strncpy(fileName, name+index, strlen(name)-index-1);
+    return fileName;
 }
 
 // get the name of file of a dir entry.
@@ -170,32 +177,39 @@ int find_dir_in_dir(char *name, int inode_num){
     name = name + strlen(dirName) + 1;
     unsigned int endAddress = 0;
     // file's parent directory
-    if (count(name, '/') == 3){
+    if (count(name, '/') == 2){
       struct ext2_dir_entry * current = (struct ext2_dir_entry *)\
       (disk + inode_table[inode_num].i_block[0] * EXT2_BLOCK_SIZE);
       endAddress = endAddress + current->rec_len;
       while (endAddress != 1024){
         char *entry_name = getName(current);
+        printf("%s\n", entry_name);
+        endAddress = endAddress + current->rec_len;
         if (strcmp(entry_name, dirName) == 0 && current->file_type == EXT2_FT_DIR) {
           free(dirName);
           free(entry_name);
           return current->inode;
         }
         free(entry_name);
+        current = (struct ext2_dir_entry *)\
+        (disk + inode_table[inode_num].i_block[0] * EXT2_BLOCK_SIZE + endAddress);
       }
     } else { // not the parent directory
       struct ext2_dir_entry * current = (struct ext2_dir_entry *)\
       (disk + inode_table[inode_num].i_block[0] * EXT2_BLOCK_SIZE);
       endAddress += current->rec_len;
       while (endAddress != 1024){
+        endAddress = endAddress + current->rec_len;
         char *entry_name = getName(current);
         if (strcmp(entry_name, dirName) == 0 &&
          current->file_type == EXT2_FT_DIR) {
           free(dirName);
           free(entry_name);
-          return find_dir_in_dir(name, current->inode);
+          return find_dir_in_dir(name, current->inode - 1);
         }
         free(entry_name);
+        current = (struct ext2_dir_entry *)\
+        (disk + inode_table[inode_num].i_block[0] * EXT2_BLOCK_SIZE + endAddress);
       }
     }
     free(dirName);
@@ -207,6 +221,7 @@ int find_file_in_dir(char *name, int inode_num){
   struct ext2_dir_entry * current = (struct ext2_dir_entry *)\
   (disk + inode_table[inode_num].i_block[0] * EXT2_BLOCK_SIZE);
   unsigned int endAddress = 0;
+  printf("%d\n", endAddress);
   while (endAddress != 1024){
     endAddress += current->rec_len;
     char *entry_name = getName(current);
